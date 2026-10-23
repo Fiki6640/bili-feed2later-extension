@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>bilifeed2later</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* popup 专属布局（通用组件样式在 style.css） */
+    body { width: 320px; margin: 0; padding: 12px 14px 14px; }
+    h1 { font-size: 15px; margin: 0 0 2px; }
+    .sub { font-size: 11px; margin: 0 0 10px; }
+    .menu { flex-direction: column; gap: 8px; margin: 0 0 10px; }
+    .menu button { width: 100%; padding: 7px 10px; }
+    .status-box {
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 8px 10px; font-size: 12px;
+    }
+    .status-box div { margin: 3px 0; }
+    #msg { margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="switch-row" style="margin-bottom: 8px;">
+    <label for="q_enabled" title="关闭后定时轮次与立即检查都会跳过">自动检查</label>
+    <span class="switch">
+      <input type="checkbox" id="q_enabled" aria-label="启用自动检查">
+      <span class="knob"></span>
+    </span>
+  </div>
+
+  <h1>bilifeed2later</h1>
+  <p class="sub">登录态：<span id="login_state">检测中…</span></p>
+
+  <div class="btns menu">
+    <button id="run_now" class="primary">立即检查</button>
+    <button id="open_options">打开设置…</button>
+  </div>
+
+  <div class="status-box">
+    <div>上次运行：<span id="last_run">—</span></div>
+    <div>上次结果：<span id="last_result">—</span></div>
+    <div>视频统计：<span id="counts">—</span></div>
+  </div>
+  <div id="msg" class="hint"></div>
+
+  <script type="module" src="action_popup.js"></script>
+</body>
+</html>
