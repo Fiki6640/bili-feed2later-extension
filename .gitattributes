@@ -1,0 +1,3 @@
+# 导出/打包时排除 CI 配置（git archive 同样生效）
+.github export-ignore
+.gitattributes export-ignore

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>bilifeed2later 设置</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* options 页专属布局（通用组件与深浅色在 style.css） */
+    body { max-width: 720px; margin: 0 auto; padding: 16px 20px 60px; }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+  </style>
+</head>
+<body>
+  <h1>bilifeed2later</h1>
+  <p class="sub">B站关注动态 → 自动加入“稍后再看”（凭据 = 浏览器登录态）</p>
+
+  <!-- ======================= 运行 ======================= -->
+  <section id="sec-run">
+    <h2>运行</h2>
+    <div class="row">
+      <label><input type="checkbox" id="enabled"> 启用自动检查</label>
+    </div>
+    <div class="row">
+      活跃时段（本地时间）：
+      <input type="number" id="ah_start" min="0" max="23"> 点
+      —
+      <input type="number" id="ah_end" min="0" max="23"> 点
+      <span class="hint">仅在该时段内执行检查，默认 8–22 点</span>
+    </div>
+    <div class="row">
+      检查间隔：<input type="number" id="interval_hours" min="1" max="24"> 小时
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="include_forward"> 收录转发动态中的视频</label>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="first_run_add"> 首次运行直接回填添加（跳过基线）</label>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="dry_run"> 试运行 dry-run（只打印将执行的动作，不实际添加）</label>
+    </div>
+    <div class="row">
+      每轮最多翻页数：<input type="number" id="max_pages" min="1" max="10">
+    </div>
+    <div class="row">
+      <label for="blacklist">UP 黑名单（每行一个 mid 或 space.bilibili.com/{mid} 链接，自动提取数字 mid）：</label>
+      <textarea id="blacklist" rows="5"
+        placeholder="12345&#10;https://space.bilibili.com/67890"></textarea>
+      <div id="blacklist_hint" class="hint"></div>
+    </div>
+  </section>
+
+  <!-- ======================= 通知 ======================= -->
+  <section id="sec-notify">
+    <h2>通知</h2>
+    <div class="row">
+      <label><input type="checkbox" id="notify_on_error"> 出现异常时发送告警</label>
+    </div>
+    <fieldset>
+      <legend>飞书</legend>
+      <input type="text" id="feishu_webhook" placeholder="机器人 webhook（完整 URL 或 hook token）">
+      <input type="text" id="feishu_secret" placeholder="签名校验 secret（可选，开启签名校验的机器人必填）">
+      <button data-test="feishu">测试</button><span class="test-result" id="tr-feishu"></span>
+    </fieldset>
+    <fieldset>
+      <legend>Telegram</legend>
+      <input type="text" id="telegram_token" placeholder="Bot Token（@BotFather 创建）">
+      <input type="text" id="telegram_chat_id" placeholder="chat_id">
+      <button data-test="telegram">测试</button><span class="test-result" id="tr-telegram"></span>
+    </fieldset>
+    <fieldset>
+      <legend>Bark</legend>
+      <input type="text" id="bark_host" placeholder="服务器 host（留空用官方 api.day.app）">
+      <input type="text" id="bark_key" placeholder="device key">
+      <div class="row row-flex">
+        <label>铃声 <input type="text" id="bark_sound" style="width:110px" placeholder="如 bell（留空默认）"></label>
+        <label>级别
+          <select id="bark_level">
+            <option value="">默认</option>
+            <option value="active">active</option>
+            <option value="timeSensitive">timeSensitive（时效性）</option>
+            <option value="passive">passive（静默）</option>
+          </select>
+        </label>
+        <label>分组 <input type="text" id="bark_group" style="width:140px" placeholder="bilifeed2later"></label>
+      </div>
+      <input type="text" id="bark_icon" placeholder="自定义图标 URL（可选）">
+      <label class="row"><input type="checkbox" id="bark_call"> 持续响铃（call=1，强调类消息慎用）</label>
+      <button data-test="bark">测试</button><span class="test-result" id="tr-bark"></span>
+    </fieldset>
+    <fieldset>
+      <legend>自定义 webhook</legend>
+      <input type="text" id="custom_webhook" placeholder="POST 接收 JSON {title, body, items}">
+      <button data-test="custom">测试</button><span class="test-result" id="tr-custom"></span>
+    </fieldset>
+    <p class="hint">保存时将按需为所选渠道的域名申请可选访问权限（open.feishu.cn / api.telegram.org / api.day.app / 自定义域）。</p>
+  </section>
+
+  <!-- ======================= 状态 ======================= -->
+  <section id="sec-status">
+    <h2>状态</h2>
+    <div class="status-line">上次运行：<span id="last_run">—</span></div>
+    <div class="status-line">上次结果：<span id="last_result">—</span></div>
+    <div class="status-line">凭据来源：浏览器登录态（<span id="login_state">检测中…</span>）</div>
+    <div class="status-line">视频状态统计：<span id="counts">—</span></div>
+    <div class="btns">
+      <button id="run_now" class="primary">立即检查</button>
+      <button id="reset_baseline">重置基线</button>
+    </div>
+    <div id="action_msg" class="hint"></div>
+  </section>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>

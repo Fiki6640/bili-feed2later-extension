@@ -1,0 +1,28 @@
+name: Release
+
+# 推送 v* 标签时：打包扩展 zip 并上传到对应 Release
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 打包扩展 zip
+        run: |
+          mkdir -p dist
+          git archive --format=zip \
+            --prefix=bili-feed2later-extension/ \
+            -o "dist/bili-feed2later-extension-${GITHUB_REF_NAME}.zip" HEAD
+
+      - name: 上传到 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
