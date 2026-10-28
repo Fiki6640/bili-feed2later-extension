@@ -39,7 +39,7 @@ async function refreshStatus() {
     : '—';
   const c = countByStatus(videos);
   $('counts').textContent =
-    `已见 ${c.seen} · 已加入 ${c.added} · 移除 ${c.user_removed} · 删除 ${c.api_deleted} · 失败 ${c.add_failed}`;
+    `已见 ${c.seen} · 已加入 ${c.added}\n移除 ${c.user_removed} · 删除 ${c.api_deleted} · 失败 ${c.add_failed}`;
 
   const el = $('login_state');
   try {
