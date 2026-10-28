@@ -3,46 +3,141 @@
 <head>
   <meta charset="utf-8">
   <title>bilifeed2later</title>
-  <link rel="stylesheet" href="style.css">
+  <!-- MiniMax frontend 规范：#faf9f5/#141413/#b0aea5/#e8e6dc + 单强调色 #d97757；
+       深浅色跟随系统（prefers-color-scheme，暗色为同系变体）。
+       label 在上/按钮按压缩放、过渡仅 transform/opacity、
+       尊重 prefers-reduced-motion、无 emoji（内联 SVG 图标） -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    /* popup 专属布局（通用组件样式在 style.css） */
-    body { width: 320px; margin: 0; padding: 12px 14px 14px; }
-    h1 { font-size: 15px; margin: 0 0 2px; }
-    .sub { font-size: 11px; margin: 0 0 10px; }
-    .menu { flex-direction: column; gap: 8px; margin: 0 0 10px; }
-    .menu button { width: 100%; padding: 7px 10px; }
-    .status-box {
-      border: 1px solid var(--border); border-radius: 6px;
-      padding: 8px 10px; font-size: 12px;
+    :root{
+      color-scheme: light dark;
+      --bg:#faf9f5; --surface:#ffffff; --ink:#141413; --mid:#b0aea5;
+      --line:#e8e6dc; --line-strong:rgba(20,20,19,.13);
+      --accent:#d97757; --green:#788c5d; --blue:#6a9bcc; --danger:#b0574a;
+      --mono:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      --sans:'Poppins',system-ui,-apple-system,'Segoe UI','Microsoft YaHei',sans-serif;
+      --ease:cubic-bezier(.16,1,.3,1);
     }
-    .status-box div { margin: 3px 0; }
-    #msg { margin-top: 8px; }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg:#171614; --surface:#201f1d; --ink:#f0efec; --mid:#8f8d85;
+        --line:#2e2c29; --line-strong:rgba(240,239,236,.14);
+        --green:#9cb37e; --blue:#8ab0d9; --danger:#d08075;
+      }
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    [hidden]{display:none!important}
+    body{width:340px;background:var(--bg);color:var(--ink);
+         font-family:var(--sans);font-size:13px;line-height:1.6}
+
+    /* ---------- header ---------- */
+    .head{display:flex;align-items:center;gap:10px;padding:12px 14px 10px;
+          border-bottom:1px solid var(--line)}
+    .brand{width:28px;height:28px;flex:none}
+    .brand-txt{flex:1;min-width:0}
+    .brand-txt h1{font-size:14px;font-weight:600;letter-spacing:-.02em;line-height:1.3}
+    .brand-txt p{font-size:11px;color:var(--mid);line-height:1.4;overflow:hidden;
+                 text-overflow:ellipsis;white-space:nowrap}
+    .ok{color:var(--green)}
+    .err{color:var(--danger);font-weight:600}
+
+    /* ---------- switch ---------- */
+    .switch-row{display:flex;align-items:center;gap:8px;flex:none}
+    .switch-row>label{font-size:11.5px;color:var(--mid);cursor:pointer}
+    .switch{position:relative;width:34px;height:20px;flex:none}
+    .switch input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;margin:0}
+    .switch .knob{position:absolute;inset:0;border-radius:999px;
+                  background:var(--line-strong);transition:opacity 160ms}
+    .switch .knob::after{content:"";position:absolute;top:3px;left:3px;width:14px;
+          height:14px;border-radius:50%;background:#fff;
+          box-shadow:0 1px 3px rgba(20,20,19,.25);
+          transition:transform 180ms var(--ease)}
+    .switch input:checked + .knob{background:var(--accent)}
+    .switch input:checked + .knob::after{transform:translateX(14px)}
+    .switch input:focus-visible + .knob{outline:2px solid var(--accent);outline-offset:2px}
+
+    main{padding:12px 14px 14px}
+
+    /* ---------- buttons ---------- */
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+         border-radius:9px;padding:7px 13px;font-family:inherit;font-size:12.5px;
+         font-weight:500;cursor:pointer;border:1px solid transparent;
+         transition:transform 150ms var(--ease),opacity 150ms var(--ease)}
+    .btn:active{transform:scale(.98)}
+    .btn[disabled]{opacity:.55;cursor:default;transform:none}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-ghost{background:var(--surface);border-color:var(--line-strong);color:var(--ink)}
+    .btn svg{width:14px;height:14px}
+    .actions{display:flex;gap:8px;margin-bottom:10px}
+    .actions .btn{flex:1}
+
+    /* ---------- cards ---------- */
+    .status-box{background:var(--surface);border:1px solid var(--line);
+                border-radius:12px;padding:10px 12px;font-size:12px;margin-bottom:10px}
+    .stat-line{display:flex;gap:10px;align-items:baseline;padding:3px 0}
+    .stat-line .k{color:var(--mid);flex:none}
+    .stat-line .v{flex:1;min-width:0;word-break:break-all;font-weight:500}
+    #msg{margin-top:2px;font-size:11.5px;color:var(--mid);line-height:1.55}
+
+    /* 本页UP（播放页快速拉黑） */
+    .cur-row{display:flex;align-items:center;gap:8px}
+    .cur-label{color:var(--mid);flex:none;font-size:11.5px}
+    .cur-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
+              white-space:nowrap;font-weight:600}
+    #ban_cur{flex:none;padding:3px 12px;font-size:12px}
+    #cur_msg{margin:4px 0 0;font-size:11.5px;color:var(--mid)}
+    .banned-tag{color:var(--green);font-weight:600}
+
+    @media (prefers-reduced-motion: reduce){
+      *,*::before,*::after{transition:none!important;animation:none!important}
+    }
   </style>
 </head>
 <body>
-  <div class="switch-row" style="margin-bottom: 8px;">
+
+<header class="head">
+  <img class="brand" src="icons/icon128.png" alt="bilifeed2later">
+  <div class="brand-txt">
+    <h1>bilifeed2later</h1>
+    <p>登录态：<span id="login_state">检测中…</span></p>
+  </div>
+  <div class="switch-row">
     <label for="q_enabled" title="关闭后定时轮次与立即检查都会跳过">自动检查</label>
     <span class="switch">
       <input type="checkbox" id="q_enabled" aria-label="启用自动检查">
       <span class="knob"></span>
     </span>
   </div>
+</header>
 
-  <h1>bilifeed2later</h1>
-  <p class="sub">登录态：<span id="login_state">检测中…</span></p>
+<main>
+  <div class="actions">
+    <button id="run_now" class="btn btn-primary">
+      <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5.3v13.4c0 .6.7 1 1.2.7l10.4-6.7c.5-.3.5-1 0-1.3L9.2 4.6c-.5-.3-1.2.1-1.2.7z"/></svg>
+      立即检查</button>
+    <button id="open_options" class="btn btn-ghost">打开设置</button>
+  </div>
 
-  <div class="btns menu">
-    <button id="run_now" class="primary">立即检查</button>
-    <button id="open_options">打开设置…</button>
+  <!-- 播放页专属：快速拉黑当前 UP（非播放页整块隐藏） -->
+  <div class="status-box" id="curSec" hidden>
+    <div class="cur-row">
+      <span class="cur-label">本页UP</span>
+      <span id="cur_up_name" class="cur-name">识别中…</span>
+      <button id="ban_cur" class="btn btn-primary" hidden>拉黑</button>
+    </div>
+    <div id="cur_msg"></div>
   </div>
 
   <div class="status-box">
-    <div>上次运行：<span id="last_run">—</span></div>
-    <div>上次结果：<span id="last_result">—</span></div>
-    <div>视频统计：<span id="counts">—</span></div>
+    <div class="stat-line"><span class="k">上次运行</span><span class="v" id="last_run">—</span></div>
+    <div class="stat-line"><span class="k">上次结果</span><span class="v" id="last_result">—</span></div>
+    <div class="stat-line"><span class="k">视频统计</span><span class="v" id="counts">—</span></div>
   </div>
-  <div id="msg" class="hint"></div>
+  <div id="msg"></div>
+</main>
 
-  <script type="module" src="action_popup.js"></script>
+<script type="module" src="action_popup.js"></script>
 </body>
 </html>

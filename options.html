@@ -2,114 +2,366 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <title>bilifeed2later 设置</title>
-  <link rel="stylesheet" href="style.css">
+  <title>bilifeed2later · 设置</title>
+  <!-- MiniMax frontend 规范：#faf9f5/#141413/#b0aea5/#e8e6dc + 单强调色 #d97757，
+       Poppins + Geist Mono（禁 Inter）、label 在上、按钮按压缩放、
+       过渡仅 transform/opacity、尊重 prefers-reduced-motion、无 emoji（内联 SVG 图标） -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    /* options 页专属布局（通用组件与深浅色在 style.css） */
-    body { max-width: 720px; margin: 0 auto; padding: 16px 20px 60px; }
-    h1 { font-size: 20px; margin: 0 0 4px; }
+    :root{
+      color-scheme: light dark;
+      --bg:#faf9f5; --surface:#ffffff; --ink:#141413; --mid:#b0aea5;
+      --line:#e8e6dc; --line-strong:rgba(20,20,19,.13);
+      --accent:#d97757; --accent-soft:rgba(217,119,87,.13);
+      --green:#788c5d; --blue:#6a9bcc; --danger:#b0574a;
+      --head-bg:rgba(250,249,245,.84);
+      --mono:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      --sans:'Poppins',system-ui,-apple-system,'Segoe UI','Microsoft YaHei',sans-serif;
+      --ease:cubic-bezier(.16,1,.3,1);
+    }
+    /* 暗色：MiniMax 同系变体（暖灰底、提升的强调色可读性），跟随系统切换 */
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg:#171614; --surface:#201f1d; --ink:#f0efec; --mid:#8f8d85;
+        --line:#2e2c29; --line-strong:rgba(240,239,236,.14);
+        --accent-soft:rgba(217,119,87,.22);
+        --green:#9cb37e; --blue:#8ab0d9; --danger:#d08075;
+        --head-bg:rgba(23,22,20,.84);
+      }
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    [hidden]{display:none!important}
+    html{-webkit-text-size-adjust:100%}
+    body{background:var(--bg);color:var(--ink);font-family:var(--sans);
+         font-size:14px;line-height:1.6;min-height:100dvh}
+
+    /* ---------- header ---------- */
+    header{position:sticky;top:0;z-index:20;
+           background:var(--head-bg);backdrop-filter:blur(12px);
+           -webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+    .head-in{max-width:880px;margin:0 auto;padding:14px 24px;
+             display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .brand{width:30px;height:30px;flex:none}
+    .brand-txt{flex:1;min-width:180px}
+    .brand-txt h1{font-size:16px;font-weight:600;letter-spacing:-.02em;line-height:1.3}
+    .brand-txt p{font-size:12px;color:var(--mid);line-height:1.4}
+
+    main{max-width:880px;margin:0 auto;padding:0 24px 60px}
+
+    /* ---------- sections / forms ---------- */
+    section{border-top:1px solid var(--line);padding:26px 0 10px}
+    .sec-head{display:flex;gap:10px;align-items:baseline;margin-bottom:4px}
+    .sec-head svg{width:17px;height:17px;stroke:var(--accent);flex:none;
+                  transform:translateY(2.5px)}
+    .sec-head h2{font-size:15.5px;font-weight:600;letter-spacing:-.015em}
+    .sec-desc{font-size:12.5px;color:var(--mid);margin-bottom:14px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+          gap:16px 20px;padding:4px 0 18px}
+    .field{display:flex;flex-direction:column;gap:6px}
+    .field.wide{grid-column:1/-1}
+    .field label{font-size:13px;font-weight:500}
+    .field .hint{font-size:12px;color:var(--mid);line-height:1.5}
+    input[type=text],input[type=number],input[type=password],textarea{
+      width:100%;background:var(--surface);border:1px solid var(--line-strong);
+      border-radius:10px;padding:9px 12px;font-family:inherit;font-size:13.5px;
+      color:var(--ink);transition:border-color 160ms var(--ease),opacity 160ms}
+    textarea{font-family:var(--mono);font-size:12.5px;line-height:1.7;resize:vertical}
+    input:focus-visible,textarea:focus-visible,button:focus-visible,select:focus-visible{
+      outline:2px solid var(--accent);outline-offset:1px}
+    input::placeholder,textarea::placeholder{color:var(--mid);opacity:.7}
+    select{background:var(--surface);border:1px solid var(--line-strong);
+           border-radius:8px;padding:6px 10px;font-family:inherit;font-size:13px;
+           color:var(--ink);cursor:pointer}
+
+    /* 黑名单标签输入（与服务端配置页同构） */
+    .tagsbox{display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+      background:var(--surface);border:1px solid var(--line-strong);
+      border-radius:10px;padding:6px 8px;cursor:text}
+    .tagsbox:focus-within{outline:2px solid var(--accent);outline-offset:1px}
+    .tagsbox input{flex:1;min-width:150px;width:auto;border:none;background:none;
+      padding:5px 6px;font-size:13px;font-family:inherit;color:var(--ink)}
+    .tagsbox input:focus-visible{outline:none}
+    .chip{display:inline-flex;align-items:center;gap:5px;background:var(--line);
+      border-radius:999px;padding:3px 5px 3px 10px;font-size:12.5px;
+      line-height:1.5;max-width:100%;color:var(--ink)}
+    .chip .uid{font-family:var(--mono);font-size:11.5px}
+    .chip-x{display:grid;place-items:center;width:17px;height:17px;flex:none;
+      border:none;background:none;color:var(--mid);cursor:pointer;
+      border-radius:50%;padding:0;transition:color 140ms var(--ease)}
+    .chip-x:hover{color:var(--danger)}
+    .chip-x svg{width:11px;height:11px}
+
+    /* switch */
+    .switch-row{display:flex;align-items:center;gap:12px;padding:2px 0 16px}
+    .switch{position:relative;width:38px;height:22px;flex:none}
+    .switch input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;margin:0}
+    .switch .knob{position:absolute;inset:0;border-radius:999px;
+                  background:var(--line-strong);transition:opacity 160ms}
+    .switch .knob::after{content:"";position:absolute;top:3px;left:3px;width:16px;
+          height:16px;border-radius:50%;background:#fff;
+          box-shadow:0 1px 3px rgba(20,20,19,.25);
+          transition:transform 180ms var(--ease)}
+    .switch input:checked + .knob{background:var(--accent)}
+    .switch input:checked + .knob::after{transform:translateX(16px)}
+    .switch input:focus-visible + .knob{outline:2px solid var(--accent);outline-offset:2px}
+    .switch-row .lab b{font-size:13.5px;font-weight:500;display:block}
+    .switch-row .lab span{font-size:12px;color:var(--mid)}
+    .switch-row > label{cursor:pointer;font-weight:500;font-size:13.5px}
+
+    /* buttons */
+    .btn{display:inline-flex;align-items:center;gap:7px;border-radius:10px;
+         padding:8px 15px;font-family:inherit;font-size:13px;font-weight:500;
+         cursor:pointer;border:1px solid transparent;
+         transition:transform 150ms var(--ease),opacity 150ms var(--ease)}
+    .btn:active{transform:scale(.98)}
+    .btn[disabled]{opacity:.55;cursor:default;transform:none}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-ghost{background:var(--surface);border-color:var(--line-strong);color:var(--ink)}
+    .btn-danger{background:var(--surface);border-color:var(--danger);color:var(--danger)}
+    .btn svg{width:15px;height:15px}
+
+    /* section sub-groups（通知渠道） */
+    .sub{display:flex;align-items:center;gap:10px;margin:8px 0 4px;
+         font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--ink)}
+    .sub::after{content:"";flex:1;height:1px;background:var(--line)}
+    .sub .tag{font-size:10.5px;font-weight:500;font-family:var(--mono);
+              color:var(--mid);letter-spacing:.02em}
+    .sub-note{font-size:12px;color:var(--mid);line-height:1.6;margin:0 0 12px}
+
+    /* 稍后再看 UP 列表（快速拉黑） */
+    .wl-actions{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;margin:2px 0 4px}
+    .wlups{margin:0 0 14px}
+    .wlup{display:flex;gap:10px;align-items:center;padding:7px 0;
+          border-top:1px solid var(--line);font-size:13px;min-height:53px}
+    .wlup .act{flex:none;display:inline-flex;align-items:center}
+    .wlup .n{font-weight:500;max-width:280px;overflow:hidden;
+             text-overflow:ellipsis;white-space:nowrap}
+    .wlup .m{font-family:var(--mono);font-size:12px;color:var(--mid)}
+    .wlup .grow{flex:1;font-size:12px;color:var(--mid)}
+    .wlup .banned{display:inline-flex;align-items:center;padding:8px 0;
+                  border:1px solid transparent;font-size:13px;color:var(--green)}
+    .empty{font-size:12.5px;color:var(--mid);padding:8px 0 14px}
+
+    /* status */
+    .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+           padding:4px 0 8px}
+    .stat{padding:6px 18px 10px;border-left:1px solid var(--line)}
+    .stat:first-child{border-left:none;padding-left:0}
+    .stat .k{font-size:11.5px;color:var(--mid);letter-spacing:.04em}
+    .stat .v{font-size:13.5px;font-weight:500;letter-spacing:-.01em;margin-top:2px;
+             word-break:break-all}
+    .stat .v.ok{color:var(--green)} .stat .v.err{color:var(--danger)}
+    .stat .s{font-size:12px;color:var(--mid)}
+    .strip-actions{display:flex;gap:10px;flex-wrap:wrap;padding:6px 0 4px}
+    .row-flex{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .row-flex label{display:flex;align-items:center;gap:6px;font-size:13px}
+    .test-result{font-size:12px}
+    .test-result.ok{color:var(--green)}
+    .test-result.err{color:var(--danger)}
+
+    /* toast */
+    #toasts{position:fixed;top:70px;right:18px;z-index:50;display:flex;
+            flex-direction:column;gap:8px;max-width:min(340px,80vw)}
+    .toast{background:var(--ink);color:var(--bg);border-radius:12px;padding:11px 15px;
+           font-size:12.5px;line-height:1.55;box-shadow:0 8px 28px rgba(20,20,19,.18);
+           border-left:3px solid var(--green);opacity:0;transform:translateY(-8px);
+           transition:opacity 220ms var(--ease),transform 220ms var(--ease)}
+    .toast.show{opacity:1;transform:none}
+    .toast.bad{border-left-color:var(--danger)}
+    .toast.info{border-left-color:var(--blue)}
+
+    footer{border-top:1px solid var(--line);margin-top:26px;padding:16px 0 8px;
+           font-size:12px;color:var(--mid);line-height:1.8}
+
+    @media (prefers-reduced-motion: reduce){
+      *,*::before,*::after{transition:none!important;animation:none!important}
+    }
   </style>
 </head>
 <body>
-  <h1>bilifeed2later</h1>
-  <p class="sub">B站关注动态 → 自动加入“稍后再看”（凭据 = 浏览器登录态）</p>
+
+<header>
+  <div class="head-in">
+    <img class="brand" src="icons/icon128.png" alt="bilifeed2later">
+    <div class="brand-txt">
+      <h1>bilifeed2later</h1>
+      <p>B站关注动态 → 自动加入稍后再看（凭据 = 浏览器登录态）；改动即时保存，下一轮生效</p>
+    </div>
+  </div>
+</header>
+
+<main>
 
   <!-- ======================= 运行 ======================= -->
   <section id="sec-run">
-    <h2>运行</h2>
-    <div class="row">
-      <label><input type="checkbox" id="enabled"> 启用自动检查</label>
+    <div class="sec-head">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M4 8h10M18 8h2M4 16h2M10 16h10"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/></svg>
+      <h2>运行</h2>
     </div>
-    <div class="row">
-      活跃时段（本地时间）：
-      <input type="number" id="ah_start" min="0" max="23"> 点
-      —
-      <input type="number" id="ah_end" min="0" max="23"> 点
-      <span class="hint">仅在该时段内执行检查，默认 8–22 点</span>
+    <p class="sec-desc">轮次节奏与收录范围；改动即时保存，下一轮自动生效。</p>
+    <div class="switch-row">
+      <span class="switch"><input type="checkbox" id="enabled"><span class="knob"></span></span>
+      <span class="lab"><b>启用自动检查</b><span>关闭后定时轮次与立即检查都会跳过</span></span>
     </div>
-    <div class="row">
-      检查间隔：<input type="number" id="interval_hours" min="1" max="24"> 小时
+    <div class="grid">
+      <div class="field"><label for="ah_start">活跃时段起（点）</label>
+        <input type="number" id="ah_start" min="0" max="23"></div>
+      <div class="field"><label for="ah_end">活跃时段止（点）</label>
+        <input type="number" id="ah_end" min="0" max="23">
+        <span class="hint">仅在该时段内执行检查，默认 8–22 点</span></div>
+      <div class="field"><label for="interval_hours">检查间隔（小时）</label>
+        <input type="number" id="interval_hours" min="1" max="24"></div>
+      <div class="field"><label for="max_pages">每轮最多翻页数</label>
+        <input type="number" id="max_pages" min="1" max="10"></div>
+      <div class="field"><label for="min_duration">短视频阈值（秒）</label>
+        <input type="number" id="min_duration" min="0" max="86400">
+        <span class="hint">低于该时长的新视频不加入、不通知，仅记已见；0 = 不过滤；300 = 5 分钟</span></div>
     </div>
-    <div class="row">
-      <label><input type="checkbox" id="include_forward"> 收录转发动态中的视频</label>
+    <div class="switch-row" style="padding-top:0">
+      <span class="switch"><input type="checkbox" id="include_forward"><span class="knob"></span></span>
+      <span class="lab"><b>收录转发动态中的视频</b><span>转发里的视频按转发者做黑名单判断</span></span>
     </div>
-    <div class="row">
-      <label><input type="checkbox" id="first_run_add"> 首次运行直接回填添加（跳过基线）</label>
+    <div class="switch-row" style="padding-top:0">
+      <span class="switch"><input type="checkbox" id="first_run_add"><span class="knob"></span></span>
+      <span class="lab"><b>首次运行直接回填添加</b><span>默认关闭：首轮只建基线，防塞爆 100 条上限</span></span>
     </div>
-    <div class="row">
-      <label><input type="checkbox" id="dry_run"> 试运行 dry-run（只打印将执行的动作，不实际添加）</label>
+    <div class="switch-row" style="padding-top:0">
+      <span class="switch"><input type="checkbox" id="dry_run"><span class="knob"></span></span>
+      <span class="lab"><b>试运行 dry-run</b><span>只打印将执行的动作，不实际添加</span></span>
     </div>
-    <div class="row">
-      每轮最多翻页数：<input type="number" id="max_pages" min="1" max="10">
+  </section>
+
+  <!-- ======================= UP 黑名单 ======================= -->
+  <section id="sec-blacklist">
+    <div class="sec-head">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>
+      <h2>UP 黑名单</h2>
     </div>
-    <div class="row">
-      <label for="blacklist">UP 黑名单（每行一个 mid 或 space.bilibili.com/{mid} 链接，自动提取数字 mid）：</label>
-      <textarea id="blacklist" rows="5"
-        placeholder="12345&#10;https://space.bilibili.com/67890"></textarea>
+    <p class="sec-desc">命中的 UP 新视频不添加、不通知，仅记已见；移出后新视频恢复收录，旧视频不回补。</p>
+    <div class="field wide" style="padding-bottom:6px">
+      <label for="blInput">输入 UP 昵称或数字 mid，回车添加；点 × 移除（可整段粘贴，自动拆分）</label>
+      <div class="tagsbox" id="blBox">
+        <span id="blChips" style="display:contents"></span>
+        <input type="text" id="blInput" placeholder="输入后回车添加" autocomplete="off">
+      </div>
       <div id="blacklist_hint" class="hint"></div>
     </div>
+    <div class="wl-actions">
+      <button class="btn btn-ghost" id="btnWlUps" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M10 9.5l5 2.5-5 2.5z"/></svg>
+        列出稍后再看 UP</button>
+      <span class="hint" id="wlUpsHint">加载当前稍后再看列表的 UP（按最近加入排序），点“拉黑”加入上方黑名单</span>
+    </div>
+    <div class="wlups" id="wlUps"></div>
   </section>
 
   <!-- ======================= 通知 ======================= -->
   <section id="sec-notify">
-    <h2>通知</h2>
-    <div class="row">
-      <label><input type="checkbox" id="notify_on_error"> 出现异常时发送告警</label>
+    <div class="sec-head">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M10.3 21a2 2 0 0 0 3.4 0"/></svg>
+      <h2>通知</h2>
     </div>
-    <fieldset>
-      <legend>飞书</legend>
-      <input type="text" id="feishu_webhook" placeholder="机器人 webhook（完整 URL 或 hook token）">
-      <input type="text" id="feishu_secret" placeholder="签名校验 secret（可选，开启签名校验的机器人必填）">
-      <button data-test="feishu">测试</button><span class="test-result" id="tr-feishu"></span>
-    </fieldset>
-    <fieldset>
-      <legend>Telegram</legend>
-      <input type="text" id="telegram_token" placeholder="Bot Token（@BotFather 创建）">
-      <input type="text" id="telegram_chat_id" placeholder="chat_id">
-      <button data-test="telegram">测试</button><span class="test-result" id="tr-telegram"></span>
-    </fieldset>
-    <fieldset>
-      <legend>Bark</legend>
-      <input type="text" id="bark_host" placeholder="服务器 host（留空用官方 api.day.app）">
-      <input type="text" id="bark_key" placeholder="device key">
-      <div class="row row-flex">
-        <label>铃声 <input type="text" id="bark_sound" style="width:110px" placeholder="如 bell（留空默认）"></label>
-        <label>级别
-          <select id="bark_level">
-            <option value="">默认</option>
-            <option value="active">active</option>
-            <option value="timeSensitive">timeSensitive（时效性）</option>
-            <option value="passive">passive（静默）</option>
-          </select>
-        </label>
-        <label>分组 <input type="text" id="bark_group" style="width:140px" placeholder="bilifeed2later"></label>
-      </div>
-      <input type="text" id="bark_icon" placeholder="自定义图标 URL（可选）">
-      <label class="row"><input type="checkbox" id="bark_call"> 持续响铃（call=1，强调类消息慎用）</label>
-      <button data-test="bark">测试</button><span class="test-result" id="tr-bark"></span>
-    </fieldset>
-    <fieldset>
-      <legend>自定义 webhook</legend>
-      <input type="text" id="custom_webhook" placeholder="POST 接收 JSON {title, body, items}">
-      <button data-test="custom">测试</button><span class="test-result" id="tr-custom"></span>
-    </fieldset>
-    <p class="hint">保存时将按需为所选渠道的域名申请可选访问权限（open.feishu.cn / api.telegram.org / api.day.app / 自定义域）。</p>
+    <p class="sec-desc">每轮一条汇总；cookie 失效 / 风控 / 列表满即时告警。保存后可用各渠道“测试”验证。</p>
+    <div class="switch-row">
+      <span class="switch"><input type="checkbox" id="notify_on_error"><span class="knob"></span></span>
+      <span class="lab"><b>出现异常时发送告警</b><span>notify_on_error</span></span>
+    </div>
+
+    <div class="sub">飞书 · 群自定义机器人 <span class="tag">webhook</span></div>
+    <p class="sub-note">群设置 → 群机器人 → 添加自定义机器人；开启签名校验时填 Secret。</p>
+    <div class="grid">
+      <div class="field wide"><label for="feishu_webhook">Webhook 地址</label>
+        <input type="text" id="feishu_webhook" placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/…"></div>
+      <div class="field"><label for="feishu_secret">签名校验 Secret（可选）</label>
+        <input type="text" id="feishu_secret"></div>
+    </div>
+    <div class="strip-actions"><button class="btn btn-ghost" data-test="feishu" type="button">测试</button>
+      <span class="test-result" id="tr-feishu"></span></div>
+
+    <div class="sub">Telegram <span class="tag">bot</span></div>
+    <p class="sub-note">@BotFather 创建 bot 拿 token；chat_id 可通过 @userinfobot 查询。</p>
+    <div class="grid">
+      <div class="field"><label for="telegram_token">Bot Token</label>
+        <input type="text" id="telegram_token" placeholder="123456:AAH…"></div>
+      <div class="field"><label for="telegram_chat_id">Chat ID</label>
+        <input type="text" id="telegram_chat_id" placeholder="123456789"></div>
+    </div>
+    <div class="strip-actions"><button class="btn btn-ghost" data-test="telegram" type="button">测试</button>
+      <span class="test-result" id="tr-telegram"></span></div>
+
+    <div class="sub">Bark <span class="tag">iOS</span></div>
+    <p class="sub-note">服务器留空用官方 api.day.app；https 自建服务器请填 https:// 前缀。</p>
+    <div class="grid">
+      <div class="field"><label for="bark_host">服务器 host</label>
+        <input type="text" id="bark_host" placeholder="api.day.app"></div>
+      <div class="field"><label for="bark_key">Device Key</label>
+        <input type="text" id="bark_key"></div>
+    </div>
+    <div class="grid">
+      <div class="field"><label for="bark_sound">铃声</label>
+        <input type="text" id="bark_sound" placeholder="如 bell（留空默认）"></div>
+      <div class="field"><label for="bark_level">通知级别</label>
+        <select id="bark_level">
+          <option value="">默认</option>
+          <option value="active">active</option>
+          <option value="timeSensitive">timeSensitive（时效性）</option>
+          <option value="passive">passive（静默）</option>
+        </select></div>
+      <div class="field"><label for="bark_group">分组</label>
+        <input type="text" id="bark_group" placeholder="bilifeed2later"></div>
+      <div class="field"><label for="bark_icon">自定义图标 URL（可选）</label>
+        <input type="text" id="bark_icon"></div>
+    </div>
+    <div class="switch-row" style="padding-top:0">
+      <span class="switch"><input type="checkbox" id="bark_call"><span class="knob"></span></span>
+      <span class="lab"><b>持续响铃</b><span>call=1，强调类消息慎用</span></span>
+    </div>
+    <div class="strip-actions"><button class="btn btn-ghost" data-test="bark" type="button">测试</button>
+      <span class="test-result" id="tr-bark"></span></div>
+
+    <div class="sub">自定义 webhook <span class="tag">POST JSON</span></div>
+    <p class="sub-note">接收 {"title", "body", "items"}。</p>
+    <div class="grid">
+      <div class="field wide"><label for="custom_webhook">Webhook 地址</label>
+        <input type="text" id="custom_webhook" placeholder="https://…"></div>
+    </div>
+    <div class="strip-actions"><button class="btn btn-ghost" data-test="custom" type="button">测试</button>
+      <span class="test-result" id="tr-custom"></span></div>
+
+    <p class="sub-note" style="margin-top:12px">保存时将按需为所选渠道的域名申请可选访问权限（open.feishu.cn / api.telegram.org / api.day.app / 自定义域）。</p>
   </section>
 
   <!-- ======================= 状态 ======================= -->
   <section id="sec-status">
-    <h2>状态</h2>
-    <div class="status-line">上次运行：<span id="last_run">—</span></div>
-    <div class="status-line">上次结果：<span id="last_result">—</span></div>
-    <div class="status-line">凭据来源：浏览器登录态（<span id="login_state">检测中…</span>）</div>
-    <div class="status-line">视频状态统计：<span id="counts">—</span></div>
-    <div class="btns">
-      <button id="run_now" class="primary">立即检查</button>
-      <button id="reset_baseline">重置基线</button>
+    <div class="sec-head">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+      <h2>状态</h2>
+    </div>
+    <p class="sec-desc">凭据来源恒为浏览器登录态；重置基线会清空全部视频状态（保留设置）。</p>
+    <div class="strip">
+      <div class="stat"><div class="k">上次运行</div><div class="v" id="last_run">—</div></div>
+      <div class="stat"><div class="k">上次结果</div><div class="v" id="last_result">—</div></div>
+      <div class="stat"><div class="k">视频统计</div><div class="v" id="counts">—</div><div class="s">已见 / 已加入 / 移除 / 删除 / 失败</div></div>
+      <div class="stat"><div class="k">登录态</div><div class="v" id="login_state">检测中…</div></div>
+    </div>
+    <div class="strip-actions">
+      <button id="run_now" class="btn btn-primary" type="button">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5.3v13.4c0 .6.7 1 1.2.7l10.4-6.7c.5-.3.5-1 0-1.3L9.2 4.6c-.5-.3-1.2.1-1.2.7z"/></svg>
+        立即检查</button>
+      <button id="reset_baseline" class="btn btn-danger" type="button">重置基线</button>
     </div>
     <div id="action_msg" class="hint"></div>
   </section>
 
-  <script type="module" src="options.js"></script>
+  <footer>
+    bilifeed2later · MV3 插件（零构建）。所有改动即时写入 chrome.storage，后台下一轮自动生效。
+  </footer>
+</main>
+
+<div id="toasts" aria-live="polite"></div>
+
+<script type="module" src="options.js"></script>
 </body>
 </html>
