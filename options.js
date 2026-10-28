@@ -347,7 +347,7 @@ function wlUpBan(u) {
 function renderWlUps() {
   const box = $('wlUps');
   if (!wlUpsData) return;
-  if (!wlUpsData.length) {
+  if (!wlUpsData.ups.length) {
     box.innerHTML = '<div class="empty">稍后再看列表为空</div>';
     return;
   }
