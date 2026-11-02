@@ -161,6 +161,17 @@
     .test-result.ok{color:var(--green)}
     .test-result.err{color:var(--danger)}
 
+    /* 服务版区折叠头（默认收起，点击展开/收起，状态记忆在 chrome.storage） */
+    #svc_head{cursor:pointer;user-select:none;-webkit-user-select:none;border-radius:8px}
+    #svc_head:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    #svc_head h2{flex:none}
+    #svc_state_tag{font-size:10.5px;font-weight:500;font-family:var(--mono);
+                   color:var(--mid);letter-spacing:.02em}
+    #svc_state_tag.ok{color:var(--green)} #svc_state_tag.err{color:var(--danger)}
+    #svc_head .chev{margin-left:auto;width:16px;height:16px;stroke:var(--mid);
+                    transform:translateY(2.5px);transition:transform 180ms var(--ease)}
+    #svc_head.open .chev{transform:translateY(2.5px) rotate(180deg)}
+
     /* toast */
     #toasts{position:fixed;top:70px;right:18px;z-index:50;display:flex;
             flex-direction:column;gap:8px;max-width:min(340px,80vw)}
@@ -187,7 +198,7 @@
     <img class="brand" src="icons/icon128.png" alt="bilifeed2later">
     <div class="brand-txt">
       <h1>bilifeed2later</h1>
-      <p>B站关注动态 → 自动加入稍后再看（凭据 = 浏览器登录态）；改动即时保存，下一轮生效</p>
+      <p>B站关注动态 → 自动加入稍后再看</p>
     </div>
   </div>
 </header>
@@ -200,36 +211,36 @@
       <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M4 8h10M18 8h2M4 16h2M10 16h10"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/></svg>
       <h2>运行</h2>
     </div>
-    <p class="sec-desc">轮次节奏与收录范围；改动即时保存，下一轮自动生效。</p>
+    <p class="sec-desc">改动即时保存，下一轮生效。</p>
     <div class="switch-row">
       <span class="switch"><input type="checkbox" id="enabled"><span class="knob"></span></span>
-      <span class="lab"><b>启用自动检查</b><span>关闭后定时轮次与立即检查都会跳过</span></span>
+      <span class="lab"><b>启用自动检查</b><span>关闭后不再检查</span></span>
     </div>
     <div class="grid">
       <div class="field"><label for="ah_start">活跃时段起（点）</label>
         <input type="number" id="ah_start" min="0" max="23"></div>
       <div class="field"><label for="ah_end">活跃时段止（点）</label>
-        <input type="number" id="ah_end" min="0" max="23">
-        <span class="hint">仅在该时段内执行检查，默认 8–22 点</span></div>
+        <input type="number" id="ah_end" min="0" max="24">
+        <span class="hint">不含止点；24 = 至午夜</span></div>
       <div class="field"><label for="interval_hours">检查间隔（小时）</label>
         <input type="number" id="interval_hours" min="1" max="24"></div>
       <div class="field"><label for="max_pages">每轮最多翻页数</label>
         <input type="number" id="max_pages" min="1" max="10"></div>
       <div class="field"><label for="min_duration">短视频阈值（秒）</label>
         <input type="number" id="min_duration" min="0" max="86400">
-        <span class="hint">低于该时长的新视频不加入、不通知，仅记已见；0 = 不过滤；300 = 5 分钟</span></div>
+        <span class="hint">0 = 不过滤</span></div>
     </div>
     <div class="switch-row" style="padding-top:0">
       <span class="switch"><input type="checkbox" id="include_forward"><span class="knob"></span></span>
-      <span class="lab"><b>收录转发动态中的视频</b><span>转发里的视频按转发者做黑名单判断</span></span>
+      <span class="lab"><b>收录转发动态中的视频</b><span>黑名单按转发者判断</span></span>
     </div>
     <div class="switch-row" style="padding-top:0">
       <span class="switch"><input type="checkbox" id="first_run_add"><span class="knob"></span></span>
-      <span class="lab"><b>首次运行直接回填添加</b><span>默认关闭：首轮只建基线，防塞爆 100 条上限</span></span>
+      <span class="lab"><b>首次运行直接回填添加</b><span>关闭时首轮只建基线</span></span>
     </div>
     <div class="switch-row" style="padding-top:0">
       <span class="switch"><input type="checkbox" id="dry_run"><span class="knob"></span></span>
-      <span class="lab"><b>试运行 dry-run</b><span>只打印将执行的动作，不实际添加</span></span>
+      <span class="lab"><b>试运行 dry-run</b><span>只打印动作，不实际添加</span></span>
     </div>
   </section>
 
@@ -239,9 +250,9 @@
       <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>
       <h2>UP 黑名单</h2>
     </div>
-    <p class="sec-desc">命中的 UP 新视频不添加、不通知，仅记已见；移出后新视频恢复收录，旧视频不回补。</p>
+    <p class="sec-desc">命中的 UP 新视频不添加、不通知。</p>
     <div class="field wide" style="padding-bottom:6px">
-      <label for="blInput">输入 UP 昵称或数字 mid，回车添加；点 × 移除（可整段粘贴，自动拆分）</label>
+      <label for="blInput">回车添加，点 × 移除，可整段粘贴</label>
       <div class="tagsbox" id="blBox">
         <span id="blChips" style="display:contents"></span>
         <input type="text" id="blInput" placeholder="输入后回车添加" autocomplete="off">
@@ -252,9 +263,26 @@
       <button class="btn btn-ghost" id="btnWlUps" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M10 9.5l5 2.5-5 2.5z"/></svg>
         列出稍后再看 UP</button>
-      <span class="hint" id="wlUpsHint">加载当前稍后再看列表的 UP（按最近加入排序），点“拉黑”加入上方黑名单</span>
+      <span class="hint" id="wlUpsHint">点“拉黑”加入上方黑名单</span>
     </div>
     <div class="wlups" id="wlUps"></div>
+  </section>
+
+  <!-- ======================= 标题关键词黑名单 ======================= -->
+  <section id="sec-title-blacklist">
+    <div class="sec-head">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h10M4 17h7"/><circle cx="18.5" cy="16.5" r="3.5"/><path d="M21 19l1.5 1.5"/></svg>
+      <h2>标题关键词黑名单</h2>
+    </div>
+    <p class="sec-desc">标题含关键词的新视频不添加、不通知，仅记已见。</p>
+    <div class="field wide" style="padding-bottom:6px">
+      <label for="tbInput">回车添加，点 × 移除，可整段粘贴</label>
+      <div class="tagsbox" id="tbBox">
+        <span id="tbChips" style="display:contents"></span>
+        <input type="text" id="tbInput" placeholder="输入后回车添加" autocomplete="off">
+      </div>
+      <div id="title_blacklist_hint" class="hint"></div>
+    </div>
   </section>
 
   <!-- ======================= 通知 ======================= -->
@@ -263,14 +291,14 @@
       <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M10.3 21a2 2 0 0 0 3.4 0"/></svg>
       <h2>通知</h2>
     </div>
-    <p class="sec-desc">每轮一条汇总；cookie 失效 / 风控 / 列表满即时告警。保存后可用各渠道“测试”验证。</p>
+    <p class="sec-desc">每轮一条汇总，异常即时告警。</p>
     <div class="switch-row">
       <span class="switch"><input type="checkbox" id="notify_on_error"><span class="knob"></span></span>
       <span class="lab"><b>出现异常时发送告警</b><span>notify_on_error</span></span>
     </div>
 
     <div class="sub">飞书 · 群自定义机器人 <span class="tag">webhook</span></div>
-    <p class="sub-note">群设置 → 群机器人 → 添加自定义机器人；开启签名校验时填 Secret。</p>
+    <p class="sub-note">开启签名校验时填 Secret。</p>
     <div class="grid">
       <div class="field wide"><label for="feishu_webhook">Webhook 地址</label>
         <input type="text" id="feishu_webhook" placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/…"></div>
@@ -281,7 +309,7 @@
       <span class="test-result" id="tr-feishu"></span></div>
 
     <div class="sub">Telegram <span class="tag">bot</span></div>
-    <p class="sub-note">@BotFather 创建 bot 拿 token；chat_id 可通过 @userinfobot 查询。</p>
+    <p class="sub-note">chat_id 用 @userinfobot 查询。</p>
     <div class="grid">
       <div class="field"><label for="telegram_token">Bot Token</label>
         <input type="text" id="telegram_token" placeholder="123456:AAH…"></div>
@@ -292,7 +320,7 @@
       <span class="test-result" id="tr-telegram"></span></div>
 
     <div class="sub">Bark <span class="tag">iOS</span></div>
-    <p class="sub-note">服务器留空用官方 api.day.app；https 自建服务器请填 https:// 前缀。</p>
+    <p class="sub-note">服务器留空用官方 api.day.app。</p>
     <div class="grid">
       <div class="field"><label for="bark_host">服务器 host</label>
         <input type="text" id="bark_host" placeholder="api.day.app"></div>
@@ -330,7 +358,97 @@
     <div class="strip-actions"><button class="btn btn-ghost" data-test="custom" type="button">测试</button>
       <span class="test-result" id="tr-custom"></span></div>
 
-    <p class="sub-note" style="margin-top:12px">保存时将按需为所选渠道的域名申请可选访问权限（open.feishu.cn / api.telegram.org / api.day.app / 自定义域）。</p>
+    <p class="sub-note" style="margin-top:12px">保存时按需申请所选渠道域名的访问权限。</p>
+  </section>
+
+  <!-- ======================= 服务版（默认折叠） ======================= -->
+  <section id="sec-sync">
+    <div class="sec-head" id="svc_head" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="svc_sec_body" title="展开/收起服务版设置">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg>
+      <h2>服务版</h2>
+      <span id="svc_state_tag">未连接</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+    <div id="svc_sec_body" hidden>
+    <p class="sec-desc">连接后参数在本页改、检查与添加由服务版执行；留空则独立使用。</p>
+    <div class="grid">
+      <div class="field wide"><label for="svc_url">服务版地址</label>
+        <input type="text" id="svc_url" placeholder="http://192.168.5.121:8420" autocomplete="off"></div>
+      <div class="field"><label for="svc_token">访问令牌（可选）</label>
+        <input type="password" id="svc_token" placeholder="服务版 [web].token 非空时必填" autocomplete="off">
+        <span class="hint">仅保存在本机</span></div>
+      <div class="field"><div class="row-flex" style="align-self:end;padding-bottom:2px">
+        <button class="btn btn-ghost" id="svc_test" type="button">测试连接</button>
+        <span class="test-result" id="svc_status"></span>
+      </div></div>
+    </div>
+
+    <div id="svc_body" hidden>
+      <div class="sub">参数同步 <span class="tag">自动 + 手动</span></div>
+      <p class="sub-note">共有参数自动双向同步（改动约 5 秒推送，每 10 分钟拉取差异）；手动按钮写入前逐项预览。总开关两版独立，不参与同步。</p>
+      <div class="strip-actions">
+        <button class="btn btn-ghost" id="svc_pull" type="button">立即从服务版拉取</button>
+        <button class="btn btn-ghost" id="svc_push" type="button">立即推送到服务版</button>
+      </div>
+      <div id="svc_autosync" class="hint" style="padding:2px 0 0"></div>
+      <div id="svc_sync_msg" class="hint" style="padding:2px 0 8px"></div>
+
+      <div class="sub">CookieCloud <span class="tag">远程编辑</span></div>
+      <p class="sub-note">服务版凭据来源之一，随「推送到服务版」写入其 config.toml。</p>
+      <div class="grid">
+        <div class="field"><label for="svc_cc_server">服务器</label>
+          <input type="text" id="svc_cc_server" placeholder="http://…:8088" autocomplete="off"></div>
+        <div class="field"><label for="svc_cc_uuid">UUID</label>
+          <input type="text" id="svc_cc_uuid" autocomplete="off"></div>
+        <div class="field"><label for="svc_cc_password">密码</label>
+          <input type="password" id="svc_cc_password" autocomplete="off"></div>
+        <div class="field" style="justify-content:flex-end">
+          <div class="switch-row" style="padding-bottom:0">
+            <span class="switch"><input type="checkbox" id="svc_cc_enabled"><span class="knob"></span></span>
+            <span class="lab"><b>启用</b></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sub">服务版专属设置 <span class="tag">远程编辑</span></div>
+      <p class="sub-note">仅存在于服务版的参数，随「推送到服务版」一并写入其 config.toml。</p>
+      <div class="grid">
+        <div class="field"><label for="svc_timezone">时区</label>
+          <input type="text" id="svc_timezone" placeholder="Asia/Shanghai">
+          <span class="hint">改动需重启服务版进程生效</span></div>
+        <div class="field"><label for="svc_add_fail_retry">加入失败重试（轮）</label>
+          <input type="number" id="svc_add_fail_retry" min="0" max="99"></div>
+        <div class="field wide"><label for="svc_apprise_text">Apprise 通知 URL（每行一个）</label>
+          <textarea id="svc_apprise_text" rows="3" placeholder="tgram://token/chatid&#10;barks://host/key" autocomplete="off"></textarea></div>
+      </div>
+
+      <div class="sub">飞书 · 群自定义机器人</div>
+      <div class="grid">
+        <div class="field wide"><label for="svc_feishu_webhook">Webhook 地址</label>
+          <input type="text" id="svc_feishu_webhook" placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/…" autocomplete="off"></div>
+        <div class="field"><label for="svc_feishu_secret">签名校验 Secret（可选）</label>
+          <input type="password" id="svc_feishu_secret" autocomplete="off"></div>
+      </div>
+
+      <div class="sub">飞书 · 自建应用</div>
+      <div class="grid">
+        <div class="field"><label for="svc_feishu_app_id">App ID</label>
+          <input type="text" id="svc_feishu_app_id" placeholder="cli_…" autocomplete="off"></div>
+        <div class="field"><label for="svc_feishu_app_secret">App Secret</label>
+          <input type="password" id="svc_feishu_app_secret" autocomplete="off"></div>
+        <div class="field"><label for="svc_feishu_chat_id">Chat ID</label>
+          <input type="text" id="svc_feishu_chat_id" placeholder="oc_…" autocomplete="off"></div>
+      </div>
+
+      <div class="sub">远程操作 <span class="tag">服务版</span></div>
+      <div class="strip-actions">
+        <button class="btn btn-ghost" id="svc_run" type="button">立即运行（服务版）</button>
+        <span class="hint">忽略活跃时段立即执行一轮</span>
+      </div>
+    </div>
+    <p class="sub-note" style="margin-top:10px">连接需授权访问该主机；建议服务版设置 [web].token。通知渠道两版各自配置，不参与同步。</p>
+    </div><!-- /svc_sec_body -->
   </section>
 
   <!-- ======================= 状态 ======================= -->
@@ -339,7 +457,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
       <h2>状态</h2>
     </div>
-    <p class="sec-desc">凭据来源恒为浏览器登录态；重置基线会清空全部视频状态（保留设置）。</p>
+    <p class="sec-desc">重置基线会清空全部视频状态（保留设置）。</p>
     <div class="strip">
       <div class="stat"><div class="k">上次运行</div><div class="v" id="last_run">—</div></div>
       <div class="stat"><div class="k">上次结果</div><div class="v" id="last_result">—</div></div>
@@ -356,7 +474,7 @@
   </section>
 
   <footer>
-    bilifeed2later · MV3 插件（零构建）。所有改动即时写入 chrome.storage，后台下一轮自动生效。
+    bilifeed2later · MV3 插件（零构建），改动即时保存。
   </footer>
 </main>
 

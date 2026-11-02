@@ -4,8 +4,12 @@
 
 import { loadState, getSettings, saveSettings, countByStatus } from './lib/store.js';
 import { checkLogin, fetchVideoOwner } from './lib/api.js';
+import { runServiceNow } from './lib/sync.js';
 
 const $ = (id) => document.getElementById(id);
+
+// 服务版接管：已配置服务版地址时，检查与添加由服务版执行
+const isServerMode = (s) => !!(s.sync && String(s.sync.server_url || '').trim());
 
 // ---------- 快捷开关（settings.enabled） ----------
 
@@ -23,13 +27,12 @@ $('q_enabled').addEventListener('change', async (e) => {
     await chrome.action.setBadgeBackgroundColor({ color: '#6a737d' });
     await chrome.action.setBadgeText({ text: s.enabled ? '' : 'OFF' });
   } catch (_) { /* badge 失败不影响功能 */ }
-  $('msg').textContent = s.enabled
-    ? '已启用自动检查。'
-    : '已停用自动检查（定时轮次与立即检查都会跳过）。';
+  $('msg').textContent = s.enabled ? '已启用自动检查。' : '已停用自动检查。';
 });
 
 async function refreshStatus() {
   const { kv, videos } = await loadState();
+  const s = await getSettings();
   $('last_run').textContent = kv.last_run_at
     ? new Date(kv.last_run_at).toLocaleString('zh-CN')
     : '从未运行';
@@ -37,9 +40,13 @@ async function refreshStatus() {
   $('last_result').textContent = r
     ? `${r.ok ? '成功' : '失败'} · 新增 ${r.new_cnt || 0} · 加入 ${r.added_cnt || 0}${r.error ? ' · ' + r.error : ''}`
     : '—';
-  const c = countByStatus(videos);
-  $('counts').textContent =
-    `已见 ${c.seen} · 已加入 ${c.added}\n移除 ${c.user_removed} · 删除 ${c.api_deleted} · 失败 ${c.add_failed}`;
+  if (isServerMode(s)) {
+    $('counts').textContent = '服务版接管中';
+  } else {
+    const c = countByStatus(videos);
+    $('counts').textContent =
+      `已见 ${c.seen} · 已加入 ${c.added}\n移除 ${c.user_removed} · 删除 ${c.api_deleted} · 失败 ${c.add_failed}`;
+  }
 
   const el = $('login_state');
   try {
@@ -57,18 +64,26 @@ $('run_now').addEventListener('click', async () => {
   btn.disabled = true;
   $('msg').textContent = '正在检查…';
   try {
-    const resp = await chrome.runtime.sendMessage({ type: 'run-now' });
-    if (!resp || !resp.ok) throw new Error((resp && resp.error) || '后台无响应');
-    const r = resp.result || {};
-    if (r.skipped === 'disabled') {
-      $('msg').textContent = '插件已停用，请在设置里勾选启用。';
-    } else if (r.skipped === 'running') {
-      $('msg').textContent = '后台一轮检查正在进行中，请稍后。';
-    } else if (r.ok) {
-      $('msg').textContent =
-        `完成：新增 ${r.new_cnt || 0}，加入 ${r.added_cnt || 0}${r.baseline ? '（本轮已建立基线）' : ''}`;
+    const s = await getSettings();
+    if (isServerMode(s)) {  // 服务版接管：触发服务版立即运行
+      const r = await runServiceNow(s.sync);
+      $('msg').textContent = r.message || '已触发服务版立即运行';
     } else {
-      $('msg').textContent = `失败：${r.error || '未知错误'}`;
+      const resp = await chrome.runtime.sendMessage({ type: 'run-now' });
+      if (!resp || !resp.ok) throw new Error((resp && resp.error) || '后台无响应');
+      const r = resp.result || {};
+      if (r.skipped === 'disabled') {
+        $('msg').textContent = '插件已停用，请在设置里勾选启用。';
+      } else if (r.skipped === 'server') {
+        $('msg').textContent = '检查由服务版执行。';
+      } else if (r.skipped === 'running') {
+        $('msg').textContent = '后台一轮检查正在进行中，请稍后。';
+      } else if (r.ok) {
+        $('msg').textContent =
+          `完成：新增 ${r.new_cnt || 0}，加入 ${r.added_cnt || 0}${r.baseline ? '（本轮已建立基线）' : ''}`;
+      } else {
+        $('msg').textContent = `失败：${r.error || '未知错误'}`;
+      }
     }
   } catch (e) {
     $('msg').textContent = `失败：${e.message}`;
@@ -105,7 +120,7 @@ async function initCurUp() {
     owner = await fetchVideoOwner(m[1]);
   } catch (_) { /* 网络异常按识别失败处理 */ }
   if (!owner) {
-    nameEl.textContent = '未能识别（稿件不可见或接口异常）';
+    nameEl.textContent = '未能识别';
     return;
   }
   nameEl.textContent = `${owner.name}（${owner.mid}）`;
@@ -117,10 +132,10 @@ async function initCurUp() {
   const render = async () => {
     if (await isBanned()) {
       btn.hidden = true;
-      msg.innerHTML = '<span class="banned-tag">已在黑名单，新动态不再收录</span>';
+      msg.innerHTML = '<span class="banned-tag">已在黑名单</span>';
     } else {
       btn.hidden = false;
-      msg.textContent = '拉黑后该 UP 的新视频不再加入稍后再看';
+      msg.textContent = '';
     }
   };
   await render();
@@ -145,7 +160,7 @@ async function initCurUp() {
         await chrome.storage.local.set({ bl_names: names });
       } catch (_) { /* 展示用，失败不阻塞 */ }
       await render();
-      $('msg').textContent = `已拉黑 ${owner.name}（${owner.mid}），下一轮起生效。`;
+      $('msg').textContent = `已拉黑 ${owner.name}，下一轮起生效。`;
     } catch (e) {
       $('msg').textContent = `拉黑失败：${e.message}`;
     }

@@ -3,6 +3,7 @@
 
 import { runPipeline } from './lib/pipeline.js';
 import { getSettings, loadState } from './lib/store.js';
+import { ensureSyncAlarm, onSettingsChanged, autoSyncCheck } from './lib/auto_sync.js';
 
 const ALARM_NAME = 'poll';
 
@@ -18,13 +19,14 @@ function inActiveHours(activeHours) {
   return hour >= start || hour < end; // 跨夜
 }
 
-// 确保轮询闹钟存在（periodInMinutes 跟随 settings.interval_hours）
+// 确保轮询闹钟存在（periodInMinutes 跟随 settings.interval_hours）；顺带兜底服务版检查闹钟
 async function ensureAlarm() {
   try {
     const s = await getSettings();
     chrome.alarms.create(ALARM_NAME, {
       periodInMinutes: Math.max(1, (s.interval_hours || 2) * 60)
     });
+    ensureSyncAlarm(s);
     await maybeCatchup(s); // 补跑判断
   } catch (e) {
     console.error('[bilifeed2later] ensureAlarm 失败', e);
@@ -45,8 +47,14 @@ async function maybeCatchup(settings) {
 chrome.runtime.onInstalled.addListener(() => { ensureAlarm(); });
 chrome.runtime.onStartup.addListener(() => { ensureAlarm(); });
 
-// 定时触发：总开关关闭或不在活跃时段 → 跳过本轮
+// 定时触发：总开关关闭或不在活跃时段 → 跳过本轮；sync_check 闹钟走自动同步检查
 chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === 'sync_check') {
+    try { await autoSyncCheck(); } catch (e) {
+      console.error('[bilifeed2later] sync_check 执行失败', e);
+    }
+    return;
+  }
   if (alarm.name !== ALARM_NAME) return;
   try {
     const s = await getSettings();
@@ -56,6 +64,13 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   } catch (e) {
     console.error('[bilifeed2later] onAlarm 执行失败', e);
   }
+});
+
+// settings 变更 → 服务版自动同步（连接增删管理检查闹钟；有连接则去抖自动推送）。
+// 设置页/弹窗/自动拉取的写入都经此入口，SW 存活期间 debounce 合并连续变更。
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.settings)
+    onSettingsChanged(changes.settings.oldValue, changes.settings.newValue);
 });
 
 // popup“立即检查”：在 SW 内执行（弹窗中途关闭也不打断），与定时轮次共用同一防重入流水线
